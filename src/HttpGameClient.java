@@ -100,4 +100,18 @@ public class HttpGameClient {
         data.put("playerName", playerName);
         sendRequest("/player/clear", data);
     }
+
+    public void checkPlayerTimeout(String gameId, String playerName) throws IOException {
+        Map<String, String> data = new HashMap<>();
+        data.put("gameId", gameId);
+        data.put("playerName", playerName);
+        sendRequest("/game/timeout", data);
+    }
+
+    public boolean passTurn(String gameId) throws IOException {
+        Map<String, String> data = new HashMap<>();
+        data.put("gameId", gameId);
+        String response = sendRequest("/game/pass", data);
+        return Boolean.parseBoolean(response);
+    }
 } 
