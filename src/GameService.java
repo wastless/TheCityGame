@@ -69,6 +69,13 @@ public class GameService {
                         disconnectPlayer(request.get("playerName"));
                         response = "{}";
                         break;
+                    case "/game/timeout":
+                        checkPlayerTimeout(request.get("gameId"), request.get("playerName"));
+                        response = "{}";
+                        break;
+                    case "/game/pass":
+                        response = gson.toJson(passTurn(request.get("gameId")));
+                        break;
                     default:
                         responseCode = 404;
                         response = "Not Found";
@@ -95,7 +102,6 @@ public class GameService {
         }
     }
 
-    @Override
     public boolean connectPlayer(String playerName) {
         System.out.println("Попытка подключения игрока: " + playerName);
         if (playerName == null || playerName.trim().isEmpty()) {
@@ -119,7 +125,6 @@ public class GameService {
         }
     }
 
-    @Override
     public List<String> getAvailableGames() {
         System.out.println("Запрос списка доступных игр");
         List<String> availableGames = new ArrayList<>();
@@ -140,7 +145,6 @@ public class GameService {
         }
     }
 
-    @Override
     public String createNewGame() {
         System.out.println("Создание новой игры");
         try {
@@ -159,7 +163,6 @@ public class GameService {
         }
     }
 
-    @Override
     public boolean joinGame(String gameId, String playerName) {
         System.out.println("Попытка присоединения игрока " + playerName + " к игре " + gameId);
         try {
@@ -206,7 +209,6 @@ public class GameService {
         }
     }
 
-    @Override
     public boolean submitCity(String gameId, String playerName, String city) {
         try {
             GameState game = games.get(gameId);
@@ -256,7 +258,6 @@ public class GameService {
         }
     }
 
-    @Override
     public GameState getGameState(String gameId) {
         try {
             GameState game = games.get(gameId);
@@ -280,7 +281,6 @@ public class GameService {
         }
     }
 
-    @Override
     public void disconnectPlayer(String playerName) {
         System.out.println("Отключение игрока: " + playerName);
         String gameId = playerGameMap.remove(playerName);
@@ -312,7 +312,6 @@ public class GameService {
         System.out.println("Игрок " + playerName + " отключен");
     }
 
-    @Override
     public void clearPlayerState(String playerName) {
         System.out.println("Очистка состояния игрока: " + playerName);
         if (playerName != null) {
@@ -321,7 +320,6 @@ public class GameService {
         }
     }
 
-    @Override
     public void checkPlayerTimeout(String gameId, String playerName) {
         System.out.println("Проверка таймаута для игрока " + playerName + " в игре " + gameId);
         try {
@@ -370,7 +368,6 @@ public class GameService {
         }
     }
 
-    @Override
     public boolean startGame(String gameId) {
         System.out.println("Попытка начать игру: " + gameId);
         try {
@@ -400,7 +397,6 @@ public class GameService {
         }
     }
 
-    @Override
     public boolean passTurn(String gameId) {
         try {
             GameState state = games.get(gameId);
