@@ -1,34 +1,102 @@
+import com.google.gson.Gson;
+import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
-import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 
-public class GameService extends UnicastRemoteObject implements GameInterface {
-    private static final long serialVersionUID = 1L;
+public class GameService {
     private final Map<String, String> playerGameMap;
     private final Map<String, GameState> games;
     private final Random random;
     private static final int MIN_PLAYERS = 3;
     private static final int MAX_PLAYERS = 5;
     private static final int TURN_TIMEOUT = 30; // секунды
+    private final Gson gson;
 
-    public GameService() throws RemoteException {
-        super();
+    public GameService() {
         this.playerGameMap = new ConcurrentHashMap<>();
         this.games = new ConcurrentHashMap<>();
         this.random = new Random();
+        this.gson = new Gson();
         System.out.println("GameService инициализирован");
     }
 
+    private void handleRequest(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        String method = exchange.getRequestMethod();
+        
+        try {
+            String response = "";
+            int responseCode = 200;
+            
+            if ("POST".equals(method)) {
+                InputStreamReader reader = new InputStreamReader(exchange.getRequestBody());
+                Map<String, String> request = gson.fromJson(reader, Map.class);
+                
+                switch (path) {
+                    case "/connect":
+                        String playerName = request.get("playerName");
+                        response = gson.toJson(connectPlayer(playerName));
+                        break;
+                    case "/games":
+                        response = gson.toJson(getAvailableGames());
+                        break;
+                    case "/game/new":
+                        response = gson.toJson(createNewGame());
+                        break;
+                    case "/game/join":
+                        response = gson.toJson(joinGame(request.get("gameId"), request.get("playerName")));
+                        break;
+                    case "/game/submit":
+                        response = gson.toJson(submitCity(
+                            request.get("gameId"),
+                            request.get("playerName"),
+                            request.get("city")
+                        ));
+                        break;
+                    case "/game/state":
+                        response = gson.toJson(getGameState(request.get("gameId")));
+                        break;
+                    case "/game/start":
+                        response = gson.toJson(startGame(request.get("gameId")));
+                        break;
+                    case "/player/disconnect":
+                        disconnectPlayer(request.get("playerName"));
+                        response = "{}";
+                        break;
+                    default:
+                        responseCode = 404;
+                        response = "Not Found";
+                }
+            } else if ("GET".equals(method) && "/".equals(path)) {
+                response = "Server is running";
+            } else {
+                responseCode = 405;
+                response = "Method Not Allowed";
+            }
+            
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(responseCode, response.length());
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(response.getBytes());
+            }
+        } catch (Exception e) {
+            String error = gson.toJson(Map.of("error", e.getMessage()));
+            exchange.getResponseHeaders().set("Content-Type", "application/json");
+            exchange.sendResponseHeaders(500, error.length());
+            try (OutputStream os = exchange.getResponseBody()) {
+                os.write(error.getBytes());
+            }
+        }
+    }
+
     @Override
-    public boolean connectPlayer(String playerName) throws RemoteException {
+    public boolean connectPlayer(String playerName) {
         System.out.println("Попытка подключения игрока: " + playerName);
         if (playerName == null || playerName.trim().isEmpty()) {
             System.out.println("Имя игрока не может быть пустым");
@@ -52,7 +120,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public List<String> getAvailableGames() throws RemoteException {
+    public List<String> getAvailableGames() {
         System.out.println("Запрос списка доступных игр");
         List<String> availableGames = new ArrayList<>();
         try {
@@ -73,7 +141,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public String createNewGame() throws RemoteException {
+    public String createNewGame() {
         System.out.println("Создание новой игры");
         try {
             String gameId = UUID.randomUUID().toString();
@@ -87,12 +155,12 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
         } catch (Exception e) {
             System.err.println("Ошибка при создании игры: " + e.getMessage());
             e.printStackTrace();
-            throw new RemoteException("Не удалось создать игру", e);
+            throw new RuntimeException("Не удалось создать игру", e);
         }
     }
 
     @Override
-    public boolean joinGame(String gameId, String playerName) throws RemoteException {
+    public boolean joinGame(String gameId, String playerName) {
         System.out.println("Попытка присоединения игрока " + playerName + " к игре " + gameId);
         try {
             if (gameId == null || playerName == null) {
@@ -139,7 +207,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public boolean submitCity(String gameId, String playerName, String city) throws RemoteException {
+    public boolean submitCity(String gameId, String playerName, String city) {
         try {
             GameState game = games.get(gameId);
             if (game == null) {
@@ -189,7 +257,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public GameState getGameState(String gameId) throws RemoteException {
+    public GameState getGameState(String gameId) {
         try {
             GameState game = games.get(gameId);
             if (game == null) {
@@ -208,12 +276,12 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             return gameStateCopy;
         } catch (Exception e) {
             System.err.println("Ошибка при получении состояния игры: " + e.getMessage());
-            throw new RemoteException("Ошибка при получении состояния игры", e);
+            throw new RuntimeException("Ошибка при получении состояния игры", e);
         }
     }
 
     @Override
-    public void disconnectPlayer(String playerName) throws RemoteException {
+    public void disconnectPlayer(String playerName) {
         System.out.println("Отключение игрока: " + playerName);
         String gameId = playerGameMap.remove(playerName);
         if (gameId != null) {
@@ -245,7 +313,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public void clearPlayerState(String playerName) throws RemoteException {
+    public void clearPlayerState(String playerName) {
         System.out.println("Очистка состояния игрока: " + playerName);
         if (playerName != null) {
             playerGameMap.remove(playerName);
@@ -254,7 +322,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public void checkPlayerTimeout(String gameId, String playerName) throws RemoteException {
+    public void checkPlayerTimeout(String gameId, String playerName) {
         System.out.println("Проверка таймаута для игрока " + playerName + " в игре " + gameId);
         try {
             GameState game = games.get(gameId);
@@ -299,12 +367,11 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             System.out.println("Ход передан игроку: " + nextPlayer);
         } catch (Exception e) {
             System.err.println("Ошибка при проверке таймаута: " + e.getMessage());
-            throw new RemoteException("Ошибка при проверке таймаута", e);
         }
     }
 
     @Override
-    public boolean startGame(String gameId) throws RemoteException {
+    public boolean startGame(String gameId) {
         System.out.println("Попытка начать игру: " + gameId);
         try {
             GameState game = games.get(gameId);
@@ -334,7 +401,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     }
 
     @Override
-    public boolean passTurn(String gameId) throws RemoteException {
+    public boolean passTurn(String gameId) {
         try {
             GameState state = games.get(gameId);
             if (state == null) {
@@ -399,46 +466,15 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             
             System.out.println("Starting server with host: " + hostAddress + " and port: " + port);
             
-            // Создаем HTTP сервер
             HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
             server.setExecutor(Executors.newFixedThreadPool(10));
             
-            // Создаем и экспортируем сервис
             GameService gameService = new GameService();
-            System.out.println("GameService created successfully");
             
-            // Создаем реестр RMI
-            Registry registry = LocateRegistry.createRegistry(port + 1);
-            System.out.println("Registry created on port: " + (port + 1));
+            server.createContext("/", gameService::handleRequest);
             
-            // Регистрируем сервис
-            registry.rebind("GameService", gameService);
-            System.out.println("GameService bound to registry");
-            
-            // Добавляем обработчик для health check
-            server.createContext("/", exchange -> {
-                String response = "Server is running";
-                exchange.sendResponseHeaders(200, response.length());
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(response.getBytes());
-                }
-            });
-            
-            // Запускаем HTTP сервер
             server.start();
             System.out.println("HTTP Server is running on " + hostAddress + ":" + port);
-            
-            // Добавляем обработчик завершения
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    registry.unbind("GameService");
-                    System.out.println("GameService unbound from registry");
-                    server.stop(0);
-                    System.out.println("HTTP Server stopped");
-                } catch (Exception e) {
-                    System.err.println("Error during shutdown: " + e.getMessage());
-                }
-            }));
             
         } catch (Exception e) {
             System.err.println("Server startup error: " + e.getMessage());

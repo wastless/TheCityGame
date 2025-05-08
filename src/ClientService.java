@@ -7,7 +7,7 @@ import java.util.Timer;
 import java.util.TimerTask;
 
 public class ClientService extends JFrame {
-    private GameInterface gameService;
+    private HttpGameClient gameClient;
     private String playerName;
     private String currentGameId;
     private JTextArea gameLog;
@@ -48,7 +48,7 @@ public class ClientService extends JFrame {
         updateTimer.scheduleAtFixedRate(new TimerTask() {
             @Override
             public void run() {
-                if (gameService != null && currentGameId != null) {
+                if (gameClient != null && currentGameId != null) {
                     SwingUtilities.invokeLater(() -> updateGameState());
                 }
             }
@@ -57,10 +57,10 @@ public class ClientService extends JFrame {
         addWindowListener(new java.awt.event.WindowAdapter() {
             @Override
             public void windowClosing(java.awt.event.WindowEvent windowEvent) {
-                if (gameService != null && playerName != null) {
+                if (gameClient != null && playerName != null) {
                     try {
-                        gameService.disconnectPlayer(playerName);
-                        gameService.clearPlayerState(playerName);
+                        gameClient.disconnectPlayer(playerName);
+                        gameClient.clearPlayerState(playerName);
                     } catch (Exception e) {
                         System.err.println("Ошибка при отключении: " + e.getMessage());
                     }
@@ -90,9 +90,7 @@ public class ClientService extends JFrame {
 
         connectButton.addActionListener(e -> {
             playerName = nameField.getText();
-            String serverAddress = "thecitygame.onrender.com";
-            int httpPort = 8080;
-            int rmiPort = httpPort + 1; // RMI порт на 1 больше HTTP порта
+            String serverAddress = "https://thecitygame.onrender.com";
             
             try {
                 if (playerName == null || playerName.trim().isEmpty()) {
@@ -100,27 +98,19 @@ public class ClientService extends JFrame {
                     return;
                 }
                 
-                if (gameService != null) {
+                if (gameClient != null) {
                     try {
-                        gameService.clearPlayerState(playerName);
+                        gameClient.clearPlayerState(playerName);
                     } catch (Exception ex) {}
                 }
                 
-                updateStatus("Подключение к " + serverAddress + ":" + rmiPort + "...");
-                System.out.println("Attempting to connect to " + serverAddress + ":" + rmiPort);
+                updateStatus("Подключение к " + serverAddress + "...");
+                System.out.println("Attempting to connect to " + serverAddress);
                 
-                // Устанавливаем системные свойства для RMI
-                System.setProperty("java.rmi.server.useCodebaseOnly", "false");
-                System.setProperty("java.rmi.server.codebase", "file:./");
+                gameClient = new HttpGameClient(serverAddress);
                 
-                Registry registry = LocateRegistry.getRegistry(serverAddress, rmiPort);
-                System.out.println("Registry found, looking up GameService...");
-                
-                gameService = (GameInterface) registry.lookup("GameService");
-                System.out.println("GameService found, attempting to connect player...");
-                
-                if (gameService.connectPlayer(playerName)) {
-                    updateStatus("Подключено к " + serverAddress + ":" + rmiPort);
+                if (gameClient.connectPlayer(playerName)) {
+                    updateStatus("Подключено к " + serverAddress);
                     connectButton.setEnabled(false);
                     nameField.setEnabled(false);
                     showAvailableGames();
@@ -128,7 +118,7 @@ public class ClientService extends JFrame {
                     showError("Игрок с таким именем уже существует");
                 }
             } catch (Exception ex) {
-                String errorMessage = "Ошибка подключения к " + serverAddress + ":" + rmiPort + ": " + ex.getMessage();
+                String errorMessage = "Ошибка подключения к " + serverAddress + ": " + ex.getMessage();
                 System.err.println(errorMessage);
                 ex.printStackTrace();
                 showError(errorMessage);
@@ -140,7 +130,7 @@ public class ClientService extends JFrame {
                 resetGame();
             } else {
                 try {
-                    if (gameService.startGame(currentGameId)) {
+                    if (gameClient.startGame(currentGameId)) {
                         startButton.setEnabled(false);
                         updateGameState();
                     } else {
@@ -155,17 +145,17 @@ public class ClientService extends JFrame {
 
     private void resetGame() {
         // Отключаем текущего игрока
-        if (gameService != null && playerName != null) {
+        if (gameClient != null && playerName != null) {
             try {
-                gameService.disconnectPlayer(playerName);
-                gameService.clearPlayerState(playerName);
+                gameClient.disconnectPlayer(playerName);
+                gameClient.clearPlayerState(playerName);
             } catch (Exception e) {
                 System.err.println("Ошибка при отключении: " + e.getMessage());
             }
         }
 
         // Сбрасываем состояние
-        gameService = null;
+        gameClient = null;
         playerName = null;
         currentGameId = null;
         isFirstPlayer = false;
@@ -307,7 +297,7 @@ public class ClientService extends JFrame {
             if (currentGameId != null) {
                 String city = cityInput.getText();
                 try {
-                    if (gameService.submitCity(currentGameId, playerName, city)) {
+                    if (gameClient.submitCity(currentGameId, playerName, city)) {
                         cityInput.setText("");
                         errorLabel.setText("");
                         if (turnTimer != null) {
@@ -348,10 +338,10 @@ public class ClientService extends JFrame {
 
     private void showAvailableGames() {
         try {
-            List<String> games = gameService.getAvailableGames();
+            List<String> games = gameClient.getAvailableGames();
             if (games.isEmpty()) {
-                currentGameId = gameService.createNewGame();
-                if (gameService.joinGame(currentGameId, playerName)) {
+                currentGameId = gameClient.createNewGame();
+                if (gameClient.joinGame(currentGameId, playerName)) {
                     updateStatus("В игре");
                     isFirstPlayer = true;
                     lastPlayersList = "";
@@ -362,7 +352,7 @@ public class ClientService extends JFrame {
                 }
             } else {
                 currentGameId = games.get(0);
-                if (gameService.joinGame(currentGameId, playerName)) {
+                if (gameClient.joinGame(currentGameId, playerName)) {
                     updateStatus("В игре");
                     isFirstPlayer = false;
                     lastPlayersList = "";
@@ -401,8 +391,8 @@ public class ClientService extends JFrame {
                             turnTimer = null;
                         }
                         try {
-                            if (gameService != null && currentGameId != null) {
-                                gameService.checkPlayerTimeout(currentGameId, playerName);
+                            if (gameClient != null && currentGameId != null) {
+                                gameClient.checkPlayerTimeout(currentGameId, playerName);
                                 updateGameState();
                             }
                         } catch (Exception e) {
@@ -420,11 +410,11 @@ public class ClientService extends JFrame {
 
     private void updateGameState() {
         try {
-            if (gameService == null || currentGameId == null) {
+            if (gameClient == null || currentGameId == null) {
                 return;
             }
 
-            GameState state = gameService.getGameState(currentGameId);
+            GameState state = gameClient.getGameState(currentGameId);
             if (state == null) {
                 showError("Не удалось получить состояние игры");
                 return;
@@ -477,7 +467,7 @@ public class ClientService extends JFrame {
                         if (players != null && !players.contains(currentPlayer)) {
                             // Если текущий игрок вышел, передаем ход следующему
                             try {
-                                gameService.passTurn(currentGameId);
+                                gameClient.passTurn(currentGameId);
                             } catch (Exception e) {
                                 showError("Ошибка передачи хода: " + e.getMessage());
                             }
