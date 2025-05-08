@@ -74,44 +74,27 @@ public class ClientService extends JFrame {
 
     private void createConnectionPanel() {
         connectionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT));
-        connectionPanel.setBorder(BorderFactory.createTitledBorder("Подключение"));
         
-        nameField = new JTextField(10);
-        serverField = new JTextField(10);
-        portField = new JTextField(5);
-        portField.setText("1099"); // Порт по умолчанию
+        JLabel nameLabel = new JLabel("Имя игрока:");
+        nameField = new JTextField(15);
         connectButton = new JButton("Подключиться");
-        startButton = new JButton("Старт");
-        startButton.setEnabled(false);
         
-        connectionPanel.add(new JLabel("Имя:"));
+        connectionPanel.add(nameLabel);
         connectionPanel.add(nameField);
-        connectionPanel.add(new JLabel("IP:"));
-        connectionPanel.add(serverField);
-        connectionPanel.add(new JLabel("Порт:"));
-        connectionPanel.add(portField);
         connectionPanel.add(connectButton);
-        connectionPanel.add(startButton);
         
         add(connectionPanel, BorderLayout.NORTH);
 
         connectButton.addActionListener(e -> {
             playerName = nameField.getText();
-            String serverAddress = serverField.getText();
-            String portStr = portField.getText();
+            String serverAddress = "thecitygame.onrender.com";
+            int port = 1099;
             
             try {
                 if (playerName == null || playerName.trim().isEmpty()) {
                     showError("Имя игрока не может быть пустым");
                     return;
                 }
-                
-                if (serverAddress == null || serverAddress.trim().isEmpty()) {
-                    showError("IP-адрес не может быть пустым");
-                    return;
-                }
-                
-                int port = Integer.parseInt(portStr);
                 
                 if (gameService != null) {
                     try {
@@ -127,16 +110,12 @@ public class ClientService extends JFrame {
                     updateStatus("Подключено к " + serverAddress + ":" + port);
                     connectButton.setEnabled(false);
                     nameField.setEnabled(false);
-                    serverField.setEnabled(false);
-                    portField.setEnabled(false);
                     showAvailableGames();
                 } else {
                     showError("Игрок с таким именем уже существует");
                 }
-            } catch (NumberFormatException ex) {
-                showError("Неверный формат порта");
             } catch (Exception ex) {
-                showError("Ошибка подключения к " + serverAddress + ":" + portStr + ": " + ex.getMessage());
+                showError("Ошибка подключения к " + serverAddress + ":" + port + ": " + ex.getMessage());
             }
         });
 
