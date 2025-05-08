@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: city-game-server
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: JAVA_OPTS
+        value: "-Djava.rmi.server.hostname=${RENDER_EXTERNAL_HOSTNAME}" 
