@@ -47,7 +47,8 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>src.GameService</mainClass>
+                            <mainClass>GameService</mainClass>
+                            <addClasspath>true</addClasspath>
                         </manifest>
                     </archive>
                 </configuration>
@@ -65,9 +66,10 @@
                         <configuration>
                             <transformers>
                                 <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>src.GameService</mainClass>
+                                    <mainClass>GameService</mainClass>
                                 </transformer>
                             </transformers>
+                            <createDependencyReducedPom>false</createDependencyReducedPom>
                         </configuration>
                     </execution>
                 </executions>
