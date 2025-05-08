@@ -386,39 +386,12 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
 
     public static void main(String[] args) {
         try {
-            String hostAddress = System.getenv("RENDER_EXTERNAL_HOSTNAME");
-            if (hostAddress == null) {
-                hostAddress = "localhost";
-            }
+            // Set RMI properties
+            System.setProperty("java.rmi.server.hostname", System.getenv("RENDER_EXTERNAL_HOSTNAME"));
+            System.setProperty("java.rmi.server.useCodebaseOnly", "false");
             
-            int port = 8080;
-            String portStr = System.getenv("PORT");
-            if (portStr != null) {
-                port = Integer.parseInt(portStr);
-            }
-            
-            System.out.println("Starting server with host: " + hostAddress + " and port: " + port);
-            
-            // Set RMI hostname
-            System.setProperty("java.rmi.server.hostname", hostAddress);
-            
-            // Создаем HTTP сервер
-            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
-            server.setExecutor(Executors.newFixedThreadPool(10));
-            
-            // Создаем и экспортируем сервис
-            GameService gameService = new GameService();
-            System.out.println("GameService created successfully");
-            
-            // Создаем реестр RMI
-            Registry registry = LocateRegistry.createRegistry(port + 1);
-            System.out.println("Registry created on port: " + (port + 1));
-            
-            // Регистрируем сервис
-            registry.rebind("GameService", gameService);
-            System.out.println("GameService bound to registry");
-            
-            // Добавляем обработчик для health check
+            // Create HTTP server for health checks
+            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
             server.createContext("/", exchange -> {
                 String response = "Server is running";
                 exchange.sendResponseHeaders(200, response.length());
@@ -426,25 +399,34 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
                     os.write(response.getBytes());
                 }
             });
-            
-            // Запускаем HTTP сервер
+            server.setExecutor(Executors.newFixedThreadPool(1));
             server.start();
-            System.out.println("HTTP Server is running on " + hostAddress + ":" + port);
-            
-            // Добавляем обработчик завершения
+            System.out.println("HTTP Server started on port 8080");
+
+            // Create RMI registry
+            Registry registry = LocateRegistry.createRegistry(8081);
+            System.out.println("RMI Registry created on port 8081");
+
+            // Create and bind game service
+            GameService gameService = new GameService();
+            registry.rebind("GameService", gameService);
+            System.out.println("GameService bound to registry");
+
+            // Add shutdown hook
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
-                    registry.unbind("GameService");
-                    System.out.println("GameService unbound from registry");
+                    System.out.println("Shutting down server...");
                     server.stop(0);
-                    System.out.println("HTTP Server stopped");
+                    UnicastRemoteObject.unexportObject(gameService, true);
+                    UnicastRemoteObject.unexportObject(registry, true);
+                    System.out.println("Server shutdown complete");
                 } catch (Exception e) {
                     System.err.println("Error during shutdown: " + e.getMessage());
                 }
             }));
-            
+
         } catch (Exception e) {
-            System.err.println("Server startup error: " + e.getMessage());
+            System.err.println("Server error: " + e.getMessage());
             e.printStackTrace();
         }
     }

@@ -114,6 +114,7 @@ public class ClientService extends JFrame {
                 System.setProperty("java.rmi.server.codebase", "file:./");
                 System.setProperty("java.rmi.server.hostname", serverAddress);
                 
+                System.out.println("RMI properties set, attempting to get registry...");
                 Registry registry = LocateRegistry.getRegistry(serverAddress, rmiPort);
                 System.out.println("Registry found, looking up GameService...");
                 
