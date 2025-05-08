@@ -1,14 +1,9 @@
-import com.sun.net.httpserver.HttpServer;
-import java.io.IOException;
-import java.io.OutputStream;
-import java.net.InetSocketAddress;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
 
 public class GameService extends UnicastRemoteObject implements GameInterface {
     private static final long serialVersionUID = 1L;
@@ -386,47 +381,32 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
 
     public static void main(String[] args) {
         try {
-            // Set RMI properties
-            System.setProperty("java.rmi.server.hostname", System.getenv("RENDER_EXTERNAL_HOSTNAME"));
-            System.setProperty("java.rmi.server.useCodebaseOnly", "false");
+            // Получаем хост из переменных окружения Railway
+            String hostAddress = System.getenv("RAILWAY_STATIC_URL");
+            if (hostAddress == null) {
+                hostAddress = System.getenv("RENDER_EXTERNAL_HOSTNAME");
+            }
+            if (hostAddress == null) {
+                hostAddress = "localhost";
+            }
             
-            // Create HTTP server for health checks
-            HttpServer server = HttpServer.create(new InetSocketAddress(8080), 0);
-            server.createContext("/", exchange -> {
-                String response = "Server is running";
-                exchange.sendResponseHeaders(200, response.length());
-                try (OutputStream os = exchange.getResponseBody()) {
-                    os.write(response.getBytes());
-                }
-            });
-            server.setExecutor(Executors.newFixedThreadPool(1));
-            server.start();
-            System.out.println("HTTP Server started on port 8080");
-
-            // Create RMI registry
-            Registry registry = LocateRegistry.createRegistry(8081);
-            System.out.println("RMI Registry created on port 8081");
-
-            // Create and bind game service
+            // Получаем порт из переменных окружения Railway
+            int port = 1099;
+            String portStr = System.getenv("PORT");
+            if (portStr != null) {
+                port = Integer.parseInt(portStr);
+            }
+            
+            // Устанавливаем системные свойства для RMI
+            System.setProperty("java.rmi.server.hostname", hostAddress);
+            System.setProperty("java.rmi.server.useLocalHostname", "false");
+            
             GameService gameService = new GameService();
+            Registry registry = LocateRegistry.createRegistry(port);
             registry.rebind("GameService", gameService);
-            System.out.println("GameService bound to registry");
-
-            // Add shutdown hook
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    System.out.println("Shutting down server...");
-                    server.stop(0);
-                    UnicastRemoteObject.unexportObject(gameService, true);
-                    UnicastRemoteObject.unexportObject(registry, true);
-                    System.out.println("Server shutdown complete");
-                } catch (Exception e) {
-                    System.err.println("Error during shutdown: " + e.getMessage());
-                }
-            }));
-
+            System.out.println("Сервер запущен на " + hostAddress + ":" + port);
         } catch (Exception e) {
-            System.err.println("Server error: " + e.getMessage());
+            System.err.println("Ошибка запуска сервера: " + e.getMessage());
             e.printStackTrace();
         }
     }
