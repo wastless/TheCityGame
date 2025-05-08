@@ -15,6 +15,7 @@
     </properties>
 
     <build>
+        <sourceDirectory>src</sourceDirectory>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -23,7 +24,7 @@
                 <configuration>
                     <archive>
                         <manifest>
-                            <mainClass>GameService</mainClass>
+                            <mainClass>src.GameService</mainClass>
                         </manifest>
                     </archive>
                     <descriptorRefs>

@@ -1,7 +1,6 @@
 FROM maven:3.8.4-openjdk-17 AS build
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
+COPY . .
 RUN mvn clean package assembly:single
 
 FROM openjdk:17-jdk-slim
