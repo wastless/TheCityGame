@@ -4,6 +4,8 @@ import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import com.github.romix.rmi.http.HttpRMIServerSocketFactory;
+import com.github.romix.rmi.http.HttpRMIClientSocketFactory;
 
 public class GameService extends UnicastRemoteObject implements GameInterface {
     private static final long serialVersionUID = 1L;
@@ -381,29 +383,38 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
 
     public static void main(String[] args) {
         try {
-            // Получаем хост из переменных окружения Railway
             String hostAddress = System.getenv("RAILWAY_STATIC_URL");
-            if (hostAddress == null) {
-                hostAddress = System.getenv("RENDER_EXTERNAL_HOSTNAME");
-            }
             if (hostAddress == null) {
                 hostAddress = "localhost";
             }
             
-            // Получаем порт из переменных окружения Railway
-            int port = 1099;
-            String portStr = System.getenv("PORT");
-            if (portStr != null) {
-                port = Integer.parseInt(portStr);
-            }
+            int port = 8080; // Используем стандартный HTTP порт
             
-            // Устанавливаем системные свойства для RMI
+            // Устанавливаем системные свойства для RMI over HTTP
             System.setProperty("java.rmi.server.hostname", hostAddress);
             System.setProperty("java.rmi.server.useLocalHostname", "false");
             
+            // Создаем фабрики сокетов для HTTP
+            HttpRMIServerSocketFactory serverSocketFactory = new HttpRMIServerSocketFactory();
+            HttpRMIClientSocketFactory clientSocketFactory = new HttpRMIClientSocketFactory();
+            
+            // Создаем сервис с HTTP фабриками
             GameService gameService = new GameService();
-            Registry registry = LocateRegistry.createRegistry(port);
-            registry.rebind("GameService", gameService);
+            GameInterface stub = (GameInterface) UnicastRemoteObject.exportObject(
+                gameService, 
+                0, 
+                clientSocketFactory, 
+                serverSocketFactory
+            );
+            
+            // Создаем реестр с HTTP фабриками
+            Registry registry = LocateRegistry.createRegistry(
+                port,
+                clientSocketFactory,
+                serverSocketFactory
+            );
+            
+            registry.rebind("GameService", stub);
             System.out.println("Сервер запущен на " + hostAddress + ":" + port);
         } catch (Exception e) {
             System.err.println("Ошибка запуска сервера: " + e.getMessage());

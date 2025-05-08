@@ -27,8 +27,3 @@ bin/
 
 ### Mac OS ###
 .DS_Store
-
-*.class
-*.log
-.idea/
-target/
