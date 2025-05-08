@@ -386,7 +386,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
                 hostAddress = "localhost";
             }
             
-            int port = 1099;
+            int port = 8080; // Изменено на HTTP порт
             String portStr = System.getenv("PORT");
             if (portStr != null) {
                 port = Integer.parseInt(portStr);
@@ -398,6 +398,10 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             System.setProperty("java.rmi.server.hostname", hostAddress);
             System.setProperty("java.rmi.server.useCodebaseOnly", "false");
             System.setProperty("java.rmi.server.codebase", "file:./");
+            System.setProperty("com.sun.management.jmxremote", "true");
+            System.setProperty("com.sun.management.jmxremote.port", String.valueOf(port));
+            System.setProperty("com.sun.management.jmxremote.authenticate", "false");
+            System.setProperty("com.sun.management.jmxremote.ssl", "false");
             
             // Создаем и экспортируем сервис
             GameService gameService = new GameService();

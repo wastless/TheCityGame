@@ -91,7 +91,7 @@ public class ClientService extends JFrame {
         connectButton.addActionListener(e -> {
             playerName = nameField.getText();
             String serverAddress = "thecitygame.onrender.com";
-            int port = 1099;
+            int port = 8080;
             
             try {
                 if (playerName == null || playerName.trim().isEmpty()) {
@@ -106,8 +106,21 @@ public class ClientService extends JFrame {
                 }
                 
                 updateStatus("Подключение к " + serverAddress + ":" + port + "...");
+                System.out.println("Attempting to connect to " + serverAddress + ":" + port);
+                
+                // Устанавливаем системные свойства для RMI
+                System.setProperty("java.rmi.server.useCodebaseOnly", "false");
+                System.setProperty("java.rmi.server.codebase", "file:./");
+                System.setProperty("com.sun.management.jmxremote", "true");
+                System.setProperty("com.sun.management.jmxremote.port", String.valueOf(port));
+                System.setProperty("com.sun.management.jmxremote.authenticate", "false");
+                System.setProperty("com.sun.management.jmxremote.ssl", "false");
+                
                 Registry registry = LocateRegistry.getRegistry(serverAddress, port);
+                System.out.println("Registry found, looking up GameService...");
+                
                 gameService = (GameInterface) registry.lookup("GameService");
+                System.out.println("GameService found, attempting to connect player...");
                 
                 if (gameService.connectPlayer(playerName)) {
                     updateStatus("Подключено к " + serverAddress + ":" + port);
@@ -118,7 +131,10 @@ public class ClientService extends JFrame {
                     showError("Игрок с таким именем уже существует");
                 }
             } catch (Exception ex) {
-                showError("Ошибка подключения к " + serverAddress + ":" + port + ": " + ex.getMessage());
+                String errorMessage = "Ошибка подключения к " + serverAddress + ":" + port + ": " + ex.getMessage();
+                System.err.println(errorMessage);
+                ex.printStackTrace();
+                showError(errorMessage);
             }
         });
 
