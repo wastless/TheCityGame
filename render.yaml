@@ -1,10 +1,12 @@
 services:
   - type: web
-    name: city-game-server
+    name: thecitygame
     env: docker
     plan: free
-    dockerfilePath: ./Dockerfile
+    region: oregon
     healthCheckPath: /
     envVars:
-      - key: JAVA_OPTS
-        value: "-Djava.rmi.server.hostname=${RENDER_EXTERNAL_HOSTNAME}" 
+      - key: PORT
+        value: 1099
+      - key: RENDER_EXTERNAL_HOSTNAME
+        value: thecitygame.onrender.com 
