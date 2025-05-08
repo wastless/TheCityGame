@@ -4,7 +4,7 @@ COPY . .
 ENV MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
 RUN mvn clean package -DskipTests -X
 
-FROM openjdk:11-jre-slim
+FROM openjdk:11-jdk-slim
 WORKDIR /app
 COPY --from=build /app/target/*.jar app.jar
 EXPOSE 1099
