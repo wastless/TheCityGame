@@ -1,5 +1,3 @@
-
-
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
@@ -394,15 +392,39 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
                 port = Integer.parseInt(portStr);
             }
             
-            // Устанавливаем системное свойство для RMI
-            System.setProperty("java.rmi.server.hostname", hostAddress);
+            System.out.println("Starting server with host: " + hostAddress + " and port: " + port);
             
+            // Устанавливаем системные свойства для RMI
+            System.setProperty("java.rmi.server.hostname", hostAddress);
+            System.setProperty("java.rmi.server.useCodebaseOnly", "false");
+            System.setProperty("java.rmi.server.codebase", "file:./");
+            
+            // Создаем и экспортируем сервис
             GameService gameService = new GameService();
+            System.out.println("GameService created successfully");
+            
+            // Создаем реестр
             Registry registry = LocateRegistry.createRegistry(port);
+            System.out.println("Registry created on port: " + port);
+            
+            // Регистрируем сервис
             registry.rebind("GameService", gameService);
-            System.out.println("Сервер запущен на " + hostAddress + ":" + port);
+            System.out.println("GameService bound to registry");
+            
+            System.out.println("Server is running on " + hostAddress + ":" + port);
+            
+            // Добавляем обработчик завершения
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    registry.unbind("GameService");
+                    System.out.println("GameService unbound from registry");
+                } catch (Exception e) {
+                    System.err.println("Error during shutdown: " + e.getMessage());
+                }
+            }));
+            
         } catch (Exception e) {
-            System.err.println("Ошибка запуска сервера: " + e.getMessage());
+            System.err.println("Server startup error: " + e.getMessage());
             e.printStackTrace();
         }
     }

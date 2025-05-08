@@ -78,10 +78,13 @@ public class ClientService extends JFrame {
         JLabel nameLabel = new JLabel("Имя игрока:");
         nameField = new JTextField(15);
         connectButton = new JButton("Подключиться");
+        startButton = new JButton("Старт");
+        startButton.setEnabled(false);
         
         connectionPanel.add(nameLabel);
         connectionPanel.add(nameField);
         connectionPanel.add(connectButton);
+        connectionPanel.add(startButton);
         
         add(connectionPanel, BorderLayout.NORTH);
 

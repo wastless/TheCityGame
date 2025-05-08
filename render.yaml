@@ -9,4 +9,7 @@ services:
       - key: PORT
         value: 1099
       - key: RENDER_EXTERNAL_HOSTNAME
-        value: thecitygame.onrender.com 
+        value: thecitygame.onrender.com
+    ports:
+      - port: 1099
+        protocol: tcp 
