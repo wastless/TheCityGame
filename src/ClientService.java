@@ -91,7 +91,8 @@ public class ClientService extends JFrame {
         connectButton.addActionListener(e -> {
             playerName = nameField.getText();
             String serverAddress = "thecitygame.onrender.com";
-            int port = 8080;
+            int httpPort = 8080;
+            int rmiPort = httpPort + 1; // RMI порт на 1 больше HTTP порта
             
             try {
                 if (playerName == null || playerName.trim().isEmpty()) {
@@ -105,25 +106,21 @@ public class ClientService extends JFrame {
                     } catch (Exception ex) {}
                 }
                 
-                updateStatus("Подключение к " + serverAddress + ":" + port + "...");
-                System.out.println("Attempting to connect to " + serverAddress + ":" + port);
+                updateStatus("Подключение к " + serverAddress + ":" + rmiPort + "...");
+                System.out.println("Attempting to connect to " + serverAddress + ":" + rmiPort);
                 
                 // Устанавливаем системные свойства для RMI
                 System.setProperty("java.rmi.server.useCodebaseOnly", "false");
                 System.setProperty("java.rmi.server.codebase", "file:./");
-                System.setProperty("com.sun.management.jmxremote", "true");
-                System.setProperty("com.sun.management.jmxremote.port", String.valueOf(port));
-                System.setProperty("com.sun.management.jmxremote.authenticate", "false");
-                System.setProperty("com.sun.management.jmxremote.ssl", "false");
                 
-                Registry registry = LocateRegistry.getRegistry(serverAddress, port);
+                Registry registry = LocateRegistry.getRegistry(serverAddress, rmiPort);
                 System.out.println("Registry found, looking up GameService...");
                 
                 gameService = (GameInterface) registry.lookup("GameService");
                 System.out.println("GameService found, attempting to connect player...");
                 
                 if (gameService.connectPlayer(playerName)) {
-                    updateStatus("Подключено к " + serverAddress + ":" + port);
+                    updateStatus("Подключено к " + serverAddress + ":" + rmiPort);
                     connectButton.setEnabled(false);
                     nameField.setEnabled(false);
                     showAvailableGames();
@@ -131,7 +128,7 @@ public class ClientService extends JFrame {
                     showError("Игрок с таким именем уже существует");
                 }
             } catch (Exception ex) {
-                String errorMessage = "Ошибка подключения к " + serverAddress + ":" + port + ": " + ex.getMessage();
+                String errorMessage = "Ошибка подключения к " + serverAddress + ":" + rmiPort + ": " + ex.getMessage();
                 System.err.println(errorMessage);
                 ex.printStackTrace();
                 showError(errorMessage);

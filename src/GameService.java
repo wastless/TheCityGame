@@ -1,9 +1,14 @@
+import com.sun.net.httpserver.HttpServer;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.net.InetSocketAddress;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executors;
 
 public class GameService extends UnicastRemoteObject implements GameInterface {
     private static final long serialVersionUID = 1L;
@@ -386,7 +391,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
                 hostAddress = "localhost";
             }
             
-            int port = 8080; // Изменено на HTTP порт
+            int port = 8080;
             String portStr = System.getenv("PORT");
             if (portStr != null) {
                 port = Integer.parseInt(portStr);
@@ -394,34 +399,42 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             
             System.out.println("Starting server with host: " + hostAddress + " and port: " + port);
             
-            // Устанавливаем системные свойства для RMI
-            System.setProperty("java.rmi.server.hostname", hostAddress);
-            System.setProperty("java.rmi.server.useCodebaseOnly", "false");
-            System.setProperty("java.rmi.server.codebase", "file:./");
-            System.setProperty("com.sun.management.jmxremote", "true");
-            System.setProperty("com.sun.management.jmxremote.port", String.valueOf(port));
-            System.setProperty("com.sun.management.jmxremote.authenticate", "false");
-            System.setProperty("com.sun.management.jmxremote.ssl", "false");
+            // Создаем HTTP сервер
+            HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
+            server.setExecutor(Executors.newFixedThreadPool(10));
             
             // Создаем и экспортируем сервис
             GameService gameService = new GameService();
             System.out.println("GameService created successfully");
             
-            // Создаем реестр
-            Registry registry = LocateRegistry.createRegistry(port);
-            System.out.println("Registry created on port: " + port);
+            // Создаем реестр RMI
+            Registry registry = LocateRegistry.createRegistry(port + 1);
+            System.out.println("Registry created on port: " + (port + 1));
             
             // Регистрируем сервис
             registry.rebind("GameService", gameService);
             System.out.println("GameService bound to registry");
             
-            System.out.println("Server is running on " + hostAddress + ":" + port);
+            // Добавляем обработчик для health check
+            server.createContext("/", exchange -> {
+                String response = "Server is running";
+                exchange.sendResponseHeaders(200, response.length());
+                try (OutputStream os = exchange.getResponseBody()) {
+                    os.write(response.getBytes());
+                }
+            });
+            
+            // Запускаем HTTP сервер
+            server.start();
+            System.out.println("HTTP Server is running on " + hostAddress + ":" + port);
             
             // Добавляем обработчик завершения
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 try {
                     registry.unbind("GameService");
                     System.out.println("GameService unbound from registry");
+                    server.stop(0);
+                    System.out.println("HTTP Server stopped");
                 } catch (Exception e) {
                     System.err.println("Error during shutdown: " + e.getMessage());
                 }
