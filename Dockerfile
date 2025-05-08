@@ -1,7 +1,6 @@
 FROM maven:3.8.4-openjdk-11-slim AS build
 WORKDIR /app
-COPY pom.xml .
-COPY src ./src
+COPY . .
 ENV MAVEN_OPTS="-Xmx512m -XX:MaxPermSize=128m"
 RUN mvn clean package -DskipTests
 
