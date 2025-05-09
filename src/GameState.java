@@ -29,6 +29,10 @@ public class GameState implements Serializable {
         return gameId;
     }
 
+    public void setGameId(String gameId) {
+        this.gameId = gameId;
+    }
+
     public List<String> getPlayers() {
         return players;
     }
@@ -86,6 +90,6 @@ public class GameState implements Serializable {
     }
 
     public void addUsedCity(String city) {
-        usedCities.add(city);
+        this.usedCities.add(city);
     }
 } 

@@ -131,17 +131,31 @@ public class CityDatabase {
 
     public static boolean isValidNextCity(String lastCity, String nextCity) {
         if (lastCity == null || lastCity.isEmpty()) {
-            return isValidCity(nextCity);
+            return true; // Первый город всегда валиден
         }
-
-        String lastLetter = lastCity.substring(lastCity.length() - 1).toUpperCase();
-        // Проверяем специальные случаи
-        if (lastLetter.equals("Ь") || lastLetter.equals("Ы") || lastLetter.equals("Й")) {
-            lastLetter = lastCity.substring(lastCity.length() - 2, lastCity.length() - 1).toUpperCase();
+        
+        if (nextCity == null || nextCity.isEmpty()) {
+            return false;
         }
-
-        Set<String> validCities = citiesByFirstLetter.get(lastLetter);
-        return validCities != null && validCities.contains(nextCity);
+        
+        // Приводим к нижнему регистру для сравнения
+        lastCity = lastCity.toLowerCase();
+        nextCity = nextCity.toLowerCase();
+        
+        // Получаем последнюю букву предыдущего города
+        char lastLetter = lastCity.charAt(lastCity.length() - 1);
+        
+        // Если последняя буква - ь, ъ, ы, й, берем предпоследнюю
+        if (lastLetter == 'ь' || lastLetter == 'ъ' || lastLetter == 'ы' || lastLetter == 'й') {
+            if (lastCity.length() > 1) {
+                lastLetter = lastCity.charAt(lastCity.length() - 2);
+            }
+        }
+        
+        // Получаем первую букву следующего города
+        char firstLetter = nextCity.charAt(0);
+        
+        return lastLetter == firstLetter;
     }
 
     public static Set<String> getCitiesByFirstLetter(String letter) {

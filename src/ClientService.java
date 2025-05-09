@@ -78,8 +78,9 @@ public class ClientService extends JFrame {
         
         nameField = new JTextField(10);
         serverField = new JTextField(10);
+        serverField.setText("thecitygame.onrender.com"); // Адрес по умолчанию
         portField = new JTextField(5);
-        portField.setText("10000"); // Порт по умолчанию
+        portField.setText("10000"); // Порт по умолчанию для Render
         connectButton = new JButton("Подключиться");
         startButton = new JButton("Старт");
         startButton.setEnabled(false);
