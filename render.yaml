@@ -7,4 +7,6 @@ services:
     envVars:
       - key: PORT
         value: 1099
+      - key: RENDER_EXTERNAL_HOSTNAME
+        value: thecitygame.onrender.com
     autoDeploy: true 

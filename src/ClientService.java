@@ -103,6 +103,11 @@ public class ClientService extends JFrame {
                 }
                 
                 updateStatus("Подключение к " + serverAddress + ":" + port + "...");
+                
+                // Устанавливаем системные свойства для RMI
+                System.setProperty("java.rmi.server.hostname", serverAddress);
+                System.setProperty("java.rmi.server.useLocalHostname", "false");
+                
                 Registry registry = LocateRegistry.getRegistry(serverAddress, port);
                 gameService = (GameInterface) registry.lookup("GameService");
                 
