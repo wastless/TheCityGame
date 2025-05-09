@@ -9,4 +9,6 @@ services:
       - key: HOST
         value: thecitygame.onrender.com
       - key: PORT
-        value: 10000 
+        value: 10000
+    buildCommand: javac -d out src/*.java
+    startCommand: java -Djava.rmi.server.hostname=${HOST} -Djava.rmi.server.port=${PORT} -cp out GameService 

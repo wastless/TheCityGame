@@ -391,11 +391,24 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             // Устанавливаем системные свойства для RMI
             System.setProperty("java.rmi.server.hostname", hostAddress);
             System.setProperty("java.rmi.server.port", String.valueOf(port));
+            System.setProperty("java.rmi.server.useCodebaseOnly", "false");
             
+            // Создаем и экспортируем сервис
             GameService gameService = new GameService();
+            
+            // Создаем реестр на указанном порту
             Registry registry = LocateRegistry.createRegistry(port);
+            
+            // Регистрируем сервис
             registry.rebind("GameService", gameService);
+            
             System.out.println("Сервер запущен на " + hostAddress + ":" + port);
+            System.out.println("RMI Registry создан на порту " + port);
+            
+            // Держим сервер запущенным
+            while (true) {
+                Thread.sleep(1000);
+            }
         } catch (Exception e) {
             System.err.println("Ошибка запуска сервера: " + e.getMessage());
             e.printStackTrace();
