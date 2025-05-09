@@ -8,7 +8,8 @@ RUN javac -d out src/*.java
 
 ENV HOST=thecitygame.onrender.com
 ENV PORT=10000
+ENV JAVA_OPTS="-Djava.rmi.server.hostname=thecitygame.onrender.com -Djava.rmi.server.port=10000 -Djava.rmi.server.useCodebaseOnly=false"
 
 EXPOSE ${PORT}
 
-CMD java -Djava.rmi.server.hostname=${HOST} -Djava.rmi.server.port=${PORT} -Djava.rmi.server.useCodebaseOnly=false -cp out GameService 
+CMD java $JAVA_OPTS -cp out GameService 
