@@ -392,7 +392,6 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             System.setProperty("java.rmi.server.hostname", hostAddress);
             System.setProperty("java.rmi.server.port", String.valueOf(port));
             System.setProperty("java.rmi.server.useCodebaseOnly", "false");
-            System.setProperty("java.rmi.server.codebase", "file:out/");
             
             // Создаем и экспортируем сервис
             GameService gameService = new GameService();
@@ -405,7 +404,6 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
             
             System.out.println("Сервер запущен на " + hostAddress + ":" + port);
             System.out.println("RMI Registry создан на порту " + port);
-            System.out.println("Codebase: " + System.getProperty("java.rmi.server.codebase"));
             
             // Держим сервер запущенным
             while (true) {

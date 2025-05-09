@@ -10,7 +10,5 @@ services:
         value: thecitygame.onrender.com
       - key: PORT
         value: 10000
-      - key: JAVA_OPTS
-        value: "-Djava.rmi.server.hostname=thecitygame.onrender.com -Djava.rmi.server.port=10000 -Djava.rmi.server.useCodebaseOnly=false -Djava.security.policy=security.policy"
     buildCommand: javac -d out src/*.java
-    startCommand: java $JAVA_OPTS -cp out GameService 
+    startCommand: java -Djava.rmi.server.hostname=${HOST} -Djava.rmi.server.port=${PORT} -cp out GameService 

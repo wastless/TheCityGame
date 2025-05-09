@@ -3,7 +3,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GameState implements Serializable {
-    private static final long serialVersionUID = 1L;
     private String gameId;
     private List<String> players;
     private List<String> usedCities;
@@ -19,18 +18,10 @@ public class GameState implements Serializable {
         this.usedCities = new ArrayList<>();
         this.gameOver = false;
         this.gameStarted = false;
-        this.currentPlayer = null;
-        this.lastCity = null;
-        this.winner = null;
     }
 
-    // Геттеры и сеттеры
     public String getGameId() {
         return gameId;
-    }
-
-    public void setGameId(String gameId) {
-        this.gameId = gameId;
     }
 
     public List<String> getPlayers() {
