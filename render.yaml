@@ -1,18 +1,10 @@
 services:
   - type: web
-    name: thecitygame
+    name: city-game-server
     env: docker
     plan: free
-    region: oregon
     healthCheckPath: /
     envVars:
       - key: PORT
-        value: 8080
-      - key: RENDER_EXTERNAL_HOSTNAME
-        value: thecitygame.onrender.com
-    autoDeploy: true
-    ports:
-      - port: 8080
-        protocol: tcp
-      - port: 8081
-        protocol: tcp 
+        value: 1099
+    autoDeploy: true 
