@@ -79,7 +79,7 @@ public class ClientService extends JFrame {
         nameField = new JTextField(10);
         serverField = new JTextField(10);
         portField = new JTextField(5);
-        portField.setText("1099"); // Порт по умолчанию
+        portField.setText("10000"); // Порт по умолчанию
         connectButton = new JButton("Подключиться");
         startButton = new JButton("Старт");
         startButton.setEnabled(false);
@@ -186,7 +186,7 @@ public class ClientService extends JFrame {
         // Очищаем и разблокируем поля ввода
         nameField.setText("");
         serverField.setText("");
-        portField.setText("1099");
+        portField.setText("10000");
         nameField.setEnabled(true);
         serverField.setEnabled(true);
         portField.setEnabled(true);
