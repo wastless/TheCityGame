@@ -15,7 +15,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     private static final int TURN_TIMEOUT = 30; // секунды
 
     public GameService() throws RemoteException {
-        super();
+        super(1099);
         this.playerGameMap = new ConcurrentHashMap<>();
         this.games = new ConcurrentHashMap<>();
         this.random = new Random();
@@ -381,26 +381,25 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
 
     public static void main(String[] args) {
         try {
-            // Получаем порт из переменной окружения или используем 1099 по умолчанию
-            int port = Integer.parseInt(System.getenv().getOrDefault("PORT", "1099"));
+            String hostAddress = System.getenv("RENDER_EXTERNAL_HOSTNAME");
+            if (hostAddress == null) {
+                hostAddress = "localhost";
+            }
             
-            // Получаем хост из переменной окружения или используем localhost
-            String hostAddress = System.getenv().getOrDefault("RENDER_EXTERNAL_HOSTNAME", "localhost");
+            int port = 1099;
+            String portStr = System.getenv("PORT");
+            if (portStr != null) {
+                port = Integer.parseInt(portStr);
+            }
             
-            // Устанавливаем системные свойства для RMI
             System.setProperty("java.rmi.server.hostname", hostAddress);
             System.setProperty("java.rmi.server.useLocalHostname", "false");
+            System.setProperty("java.rmi.server.codebase", "https://thecitygame.onrender.com");
             
-            // Создаем и экспортируем сервис на фиксированном порту
             GameService gameService = new GameService();
-            GameInterface stub = (GameInterface) UnicastRemoteObject.exportObject(gameService, port);
-            
-            // Создаем реестр на том же порту
             Registry registry = LocateRegistry.createRegistry(port);
-            registry.rebind("GameService", stub);
-            
+            registry.rebind("GameService", gameService);
             System.out.println("Сервер запущен на " + hostAddress + ":" + port);
-            System.out.println("RMI Registry доступен на том же порту");
         } catch (Exception e) {
             System.err.println("Ошибка запуска сервера: " + e.getMessage());
             e.printStackTrace();

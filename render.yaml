@@ -9,4 +9,7 @@ services:
         value: 1099
       - key: RENDER_EXTERNAL_HOSTNAME
         value: thecitygame.onrender.com
-    autoDeploy: true 
+    autoDeploy: true
+    ports:
+      - port: 1099
+        protocol: tcp 
