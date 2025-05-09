@@ -15,7 +15,7 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
     private static final int TURN_TIMEOUT = 30; // секунды
 
     public GameService() throws RemoteException {
-        super(1099);
+        super();
         this.playerGameMap = new ConcurrentHashMap<>();
         this.games = new ConcurrentHashMap<>();
         this.random = new Random();
@@ -381,20 +381,16 @@ public class GameService extends UnicastRemoteObject implements GameInterface {
 
     public static void main(String[] args) {
         try {
-            String hostAddress = System.getenv("RENDER_EXTERNAL_HOSTNAME");
-            if (hostAddress == null) {
+            String hostAddress = System.getenv("HOST");
+            int port = Integer.parseInt(System.getenv("PORT"));
+            
+            if (hostAddress == null || hostAddress.isEmpty()) {
                 hostAddress = "localhost";
             }
             
-            int port = 1099;
-            String portStr = System.getenv("PORT");
-            if (portStr != null) {
-                port = Integer.parseInt(portStr);
-            }
-            
+            // Устанавливаем системные свойства для RMI
             System.setProperty("java.rmi.server.hostname", hostAddress);
-            System.setProperty("java.rmi.server.useLocalHostname", "false");
-            System.setProperty("java.rmi.server.codebase", "https://thecitygame.onrender.com");
+            System.setProperty("java.rmi.server.port", String.valueOf(port));
             
             GameService gameService = new GameService();
             Registry registry = LocateRegistry.createRegistry(port);

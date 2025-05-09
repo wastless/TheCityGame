@@ -2,10 +2,10 @@ FROM openjdk:17-jdk-slim
 
 WORKDIR /app
 
-COPY . .
+COPY . /app
 
-RUN javac src/*.java
+RUN javac -d out src/*.java
 
-EXPOSE 1099
+EXPOSE ${PORT}
 
-CMD ["java", "-cp", "src", "GameService"] 
+CMD java -Djava.rmi.server.hostname=${HOST} -Djava.rmi.server.port=${PORT} -cp out GameService ${HOST} ${PORT} 
